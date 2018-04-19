@@ -12,18 +12,33 @@ To avoid this, applications need to know when init data can be ignored and when
 a new session needs to be created.
 
 Parsing init data requires applications to know the details of init data formats
-for each key system, which may not be available.  Binary comparisons of init
-data helps, but still produces duplicate sessions, as two distinct init data
-binaries may refer to the same set of keys.  The only component that knows for
-certain which init data binaries map to what is the CDM, so the CDM should
-provide an API (through EME) to help applications understand this.
+for each key system, which may not be available.  Binary comparison of init data
+helps, but still produces duplicate sessions, as two distinct init data binaries
+may still refer to the same set of keys.  The only component that knows for
+certain which init data binaries map to which sessions is the CDM, so the CDM
+should provide an API (through EME) to help applications understand this.
 
 
 ## Overview
 
-[`MediaKeys`][] has a `createSession()` method which allows the creation of new
-sessions.  We should extend `MediaKeys` to add method to find an existing
-session by its initialization data.
+In this proposal, we add a method to [`MediaKeys`][] which allows an application
+to find an existing session (if it exists) that contains usable keys for some
+init data.  This method can go beyond the binary comparison that applications
+use today, and may find usable sessions even for unique init data.
+
+We also propose a polyfill which would allow applications to adopt the new
+method right away.  This polyfill uses binary comparisons of init data, and
+therefore produces the same false negatives that we want to eliminate with the
+new method.  While this is not perfect, it is no worse than where we started.
+The polyfill will help offload the naive init data comparison logic from
+applications and smooth the transition to the new method.
+
+Currently, [`MediaKeys`][] has a `createSession()` method which allows the
+creation of new sessions.  We should extend `MediaKeys` to add a method called
+`findSessionByInitData`, which will find an existing session based on
+initialization data.  This initialization data may or may not be
+binary-identical to the init data used to create the session, but the CDM can
+determine equivalence in terms of usable keys.
 
 [`MediaKeys`]: https://www.w3.org/TR/encrypted-media/#mediakeys-interface
 
